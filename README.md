@@ -88,3 +88,4 @@ This is my updated plan. I'm focusing on a solid foundation before adding the da
 | 6    | **Implement Authentication Logic**         | - **Sign Up:** I will hash passwords and save new users.<br>- **Login:** I will compare passwords and issue a JWT.<br>- **Protect Routes:** I will create middleware to verify JWTs. | ⬜ To Do     |
 | 7    | **Build Out Subscription Routes (CRUD)**   | I will implement the core logic for the subscription routes (Create, Read, Update, Delete).                                                                             | ⬜ To Do     |
 | 8    | **Add Input Validation**                   | I will add validation to my routes to ensure the data I receive is correct.                                                                                          | ⬜ To Do     |
+# Subscription-Tracker
