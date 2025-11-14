@@ -74,6 +74,165 @@ I've moved all the comments from my code files into this section to keep the cod
 *   **PUT /:id:** I will use this route to update a user's profile information.
 *   **DELETE /:id:** I will use this route to delete a user account.
 
+## Debugging Issues Found & Fixed
+
+Okay, so I found **7 major issue categories** scattered across my files. Here's what was wrong and what I fixed:
+
+### 1. **app.js - Invalid Parameter Syntax**
+   - **Problem:** `app.listen(PORT, hostname: async () => {...})`
+   - **What I messed up:** I wrote `hostname:` like it was an object property when it should just be the PORT parameter. Total brainfart.
+   - **Fix:** Changed to `app.listen(PORT, async () => {...})`
+   - **Also:** I forgot to import `connectToDatabase` at the top!
+
+### 2. **Config/env.js - Wrong Syntax & Quote Issues**
+   - **Problem:** `config(options:{path: '.env.${process.env.NODE_ENV || 'development'}.local'})`
+   - **What I messed up:** I added `options:` which isn't a thing, and I used single quotes inside template literals so the variables weren't getting interpolated.
+   - **Fix:** Changed to `config({path: \`.env.${process.env.NODE_ENV || 'development'}.local\`})`
+   - **Note to self:** Backticks for template literals, not single quotes!
+
+### 3. **Database/mongodb.js - Multiple Errors**
+   - **Problem 1:** `await mongoose.connect(DB_URI); {` - random brace hanging there
+   - **Problem 2:** `console.log('Connected to database in ${NODE_ENV} mode')` - single quotes won't interpolate
+   - **Problem 3:** `process.exit( code: 1)` - invalid syntax, should be `process.exit(1)`
+   - **What I messed up:** Looks like I had a copy-paste disaster here.
+   - **Fix:** Removed the stray brace, fixed template literals, fixed the exit code syntax
+
+### 4. **Routes/User.auth.js - Missing Semicolons**
+   - **Problem:** All the route handlers were missing semicolons at the end
+   - **What I messed up:** Inconsistent formatting. Other route files had them, this one didn't.
+   - **Fix:** Added semicolons to all 5 route handlers
+
+### 5. **Routes/Subscription.routes.js & Routes/auth.route.js**
+   - **Status:** ✅ These files were clean! No errors here.
+
+### 6. **.env.development.local - Missing DB_URI Key**
+   - **Problem:** The MongoDB connection string was there but without the `DB_URI=` key
+   - **What I messed up:** I just pasted the connection string without assigning it to a variable name
+   - **Fix:** Added `DB_URI=` prefix so the env loader could read it properly
+   - **Error it caused:** `Error: Database connection string (DB_URI) is not defined in environment variables`
+
+### 7. **.env.development.local - Special Character Breaking URI**
+   - **Problem:** Password was `Killermbele@2003` which contains an `@` symbol. MongoDB URIs use `@` to separate credentials from the host, so having `@` in the password broke the parsing
+   - **What I messed up:** I didn't URL-encode the special character in my password
+   - **Fix:** Changed `@` to `%40` in the password: `Killermbele%402003`
+   - **Error it caused:** `Error: querySrv ENOTFOUND _mongodb._tcp.2003` - it was trying to look up "2003" as a hostname because the URI was malformed
+   - **Lesson learned:** Always URL-encode special characters in database URIs!
+
+### 8. **Models/Subscription.model.js - CRITICAL Schema Syntax Errors**
+   - **Problem 1:** `new mongoose.Schema(definition: {` - Wrong syntax! Should be just parentheses
+   - **Problem 2:** `namer:` should be `name:` (typo)
+   - **Problem 3:** `trime:` should be `trim:` (typo)
+   - **Problem 4:** `maxLength:/ 100,` - Random `/` character breaking the syntax
+   - **Problem 5:** Missing comma after `frequency` enum definition
+   - **Problem 6:** `}, options: {timestamps: true}` - Wrong syntax, should be `}, {timestamps: true})`
+   - **Problem 7:** `subscriptionSchema.pre(method: 'save', fn: function(next)` - Wrong syntax, should be `.pre('save', function(next)`
+   - **Problem 8:** In `startDate` validator: `validator: function (value) => value < new Date()` - Mixed function syntax (can't use arrow in function definition)
+   - **What I messed up:** Massive copy-paste and typo errors. This file was basically non-functional.
+   - **Fix:** Corrected all syntax to proper Mongoose schema syntax, fixed all typos, removed random characters, added missing export statement
+
+### 9. **Models/User.models.js - CRITICAL Schema Syntax Errors**
+   - **Problem 1:** `new mongoose.schema(` - Lowercase 's' should be uppercase 'Schema'
+   - **Problem 2:** `new mongoose.schema(definition:{` - Wrong syntax, should be just parentheses
+   - **Problem 3:** `'User Name iss required'` - Typo: "iss" should be "is"
+   - **Problem 4:** Missing comma after email `required` property
+   - **Problem 5:** `trim: trim,` - This assigns the variable `trim` which doesn't exist, should be `trim: true,`
+   - **Problem 6:** `match: [/\S+a\S+\.\S+/` - 'a' should be '@' symbol (email regex is broken)
+   - **Problem 7:** `'Please fill a valid em ail address'` - Space in "email"
+   - **Problem 8:** Missing comma after email object
+   - **Problem 9:** `type:/ String,` - Random `/` character breaking syntax
+   - **Problem 10:** `mongoose.model(name: "User", userSchema)` - Wrong syntax, should be `mongoose.model('User', userSchema)`
+   - **Problem 11:** Variable assigned as lowercase `user` but exported as uppercase `User`
+   - **What I messed up:** This file was a disaster. Almost every line had an error!
+   - **Fix:** Corrected all syntax, fixed typos, fixed regex pattern, corrected model declaration and export
+
+---
+
+### Summary of File Issues by Location:
+
+| File | Issues Found | Status |
+|------|-------------|--------|
+| app.js | 2 (invalid params, missing import) | ✅ Fixed |
+| Config/env.js | 2 (wrong syntax, quotes) | ✅ Fixed |
+| Database/mongodb.js | 3 (stray brace, quotes, exit syntax) | ✅ Fixed |
+| Routes/auth.route.js | 0 | ✅ Clean |
+| Routes/Subscription.routes.js | 0 | ✅ Clean |
+| Routes/User.auth.js | 5 (missing semicolons) | ✅ Fixed |
+| .env.development.local | 2 (missing key, unencoded character) | ✅ Fixed |
+| Models/Subscription.model.js | 8 (schema syntax, typos, validators) | ✅ Fixed |
+| Models/User.models.js | 11 (schema syntax, typos, regex, export) | ✅ Fixed |
+| eslint.config.js | 0 | ✅ Clean |
+
+---
+
+## Backend Project Architecture & End Goal
+
+Here's what I'm building - a **Subscription Management Backend API**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      CLIENT (Web/Mobile App)                     │
+│                      (Frontend - Not Included)                   │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ↓ HTTP Requests
+                           │
+┌─────────────────────────────────────────────────────────────────┐
+│                    EXPRESS SERVER (app.js)                       │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │         Middleware: JSON Parser & URL Encoder            │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                           │                                      │
+│           ┌───────────────┼───────────────┐                      │
+│           ↓               ↓               ↓                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐            │
+│  │ Auth Routes  │  │ Subscription │  │ User Routes │            │
+│  │  /auth/*     │  │  Routes      │  │  /user/*    │            │
+│  │ - Login      │  │  /sub/*      │  │ - Get Users │            │
+│  │ - Sign Up    │  │ - Create     │  │ - Get User  │            │
+│  │ - Sign Out   │  │ - Read       │  │ - Update    │            │
+│  │              │  │ - Update     │  │ - Delete    │            │
+│  │              │  │ - Delete     │  │             │            │
+│  │              │  │ - Cancel     │  │             │            │
+│  │              │  │ - Renewals   │  │             │            │
+│  └──────────────┘  └──────────────┘  └─────────────┘            │
+│           │               │               │                      │
+│           └───────────────┼───────────────┘                      │
+│                           ↓                                      │
+│                   ┌────────────────┐                             │
+│                   │ Business Logic │                             │
+│                   │  Controllers   │                             │
+│                   └────────────────┘                             │
+└───────────────────────────┬──────────────────────────────────────┘
+                            │
+                            ↓ Mongoose ODM
+                            │
+┌─────────────────────────────────────────────────────────────────┐
+│                     MONGODB DATABASE                             │
+│  ┌────────────────────┐         ┌──────────────────────────┐    │
+│  │   Users Collection │         │ Subscriptions Collection │    │
+│  ├────────────────────┤         ├──────────────────────────┤    │
+│  │ - _id              │         │ - _id                    │    │
+│  │ - username         │         │ - userId (FK)            │    │
+│  │ - email            │         │ - serviceName            │    │
+│  │ - password (hashed)│         │ - price                  │    │
+│  │ - createdAt        │         │ - billingCycle           │    │
+│  └────────────────────┘         │ - renewalDate            │    │
+│                                 │ - status (active/paused) │    │
+│                                 │ - createdAt              │    │
+│                                 └──────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### What This Backend Does
+
+1. **User Management** - Create accounts, log in, log out
+2. **Subscription Tracking** - Add, view, update, delete subscriptions
+3. **Renewal Tracking** - Get upcoming renewal dates so you don't miss payments
+4. **Subscription Cancellation** - Cancel subscriptions without deleting them
+5. **Admin Features** - View all users and their subscriptions
+
+---
+
 ## My Revised Project Roadmap
 
 This is my updated plan. I'm focusing on a solid foundation before adding the database.
