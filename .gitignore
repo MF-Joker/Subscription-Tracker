@@ -59,5 +59,16 @@ typings/
 .env.development.local
 .env.production.local
 
+# Local editor
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Lockfiles
+package-lock.json
+
 # next.js build output
 .next

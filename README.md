@@ -82,13 +82,13 @@ This shows how a user would interact with the API from a high level. For example
 
 ```mermaid
 graph TD
-    A[User visits my website/app] --> B{Clicks 'Sign Up'};
-    B --> C[Fills out a form with username, email, and password];
-    C --> D[Clicks 'Submit'];
-    D --> E{API receives request at `POST /api/v1/auth/sign-up`};
-    E --> F[API processes the request (validation, user creation)];
-    F --> G{API sends back a success message or token};
-    G --> H[User is now logged in];
+   A[User visits the web or mobile app] --> B{User clicks "Sign Up"}
+   B --> C[Fills form: username, email, password]
+   C --> D[Clicks Submit]
+   D --> E[API receives request at POST /api/v1/auth/sign-up]
+   E --> F[Server validates input and creates user record]
+   F --> G[Server returns success response + token]
+   G --> H[User is now authenticated and redirected to app]
 ```
 
 ### Programmer's Perspective (Request Lifecycle)
@@ -97,14 +97,13 @@ This shows what happens inside the code when a request comes in. This example fo
 
 ```mermaid
 graph TD
-    A[Request: GET /api/v1/subscription/123] --> B[Enters `app.js`];
-    B --> C{Middleware (`express.json`, etc.) is executed};
-    C --> D{App routing matches `/api/v1/subscription`};
-    D --> E[Control is passed to `Subscription.routes.js`];
-    E --> F{Router matches the `/:id` route};
-    F --> G[The route handler function is executed];
-    G --> H{Controller logic fetches data from the database (future step)};
-    H --> I[A JSON response is sent back to the client];
+   A[Request: GET /api/v1/subscription/123] --> B[Enters app.js]
+   B --> C{Middleware runs: express.json(), cookieParser, etc.}
+   C --> D{Router matches /api/v1/subscription}
+   D --> E[Subscription.routes.js -> route handler]
+   E --> F[Controller executes business logic]
+   F --> G[Controller queries MongoDB via Mongoose]
+   G --> H[Controller builds and sends JSON response]
 ```
 
 ## Code Commentary
@@ -321,4 +320,26 @@ This is my updated plan. I'm focusing on a solid foundation before adding the da
 | 6    | **Implement Authentication Logic**         | - **Sign Up:** I will hash passwords and save new users.<br>- **Login:** I will compare passwords and issue a JWT.<br>- **Protect Routes:** I will create middleware to verify JWTs. | ⬜ To Do     |
 | 7    | **Build Out Subscription Routes (CRUD)**   | I will implement the core logic for the subscription routes (Create, Read, Update, Delete).                                                                             | ⬜ To Do     |
 | 8    | **Add Input Validation**                   | I will add validation to my routes to ensure the data I receive is correct.                                                                                          | ⬜ To Do     |
+
+## Removing Committed Secrets
+
+If you accidentally committed secrets (like `DB_URI` or `JWT_SECRET`), take these steps immediately:
+
+- **Rotate secrets**: Change passwords, API keys, and any credentials in your providers.
+- **Add `.env` to `.gitignore`** (already added in this repo) so new secret files won't be tracked.
+- **Scrub history**: Remove secrets from the repository history. Two common tools:
+   - `git-filter-repo` (recommended)
+   - BFG Repo-Cleaner
+
+Example using `git-filter-repo` (run on a separate machine/clone):
+
+```
+git clone --mirror https://github.com/youruser/yourrepo.git
+cd yourrepo.git
+git filter-repo --path .env.development.local --invert-paths
+git push --force
+```
+
+After scrubbing, inform collaborators and rotate secrets again as an extra precaution.
+
 # Subscription-Tracker
